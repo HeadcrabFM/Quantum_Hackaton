@@ -1,0 +1,16 @@
+- id: task_2
+  type: QUBO
+  objective:
+    target: 50
+    to: min
+  solution:
+    variables:
+      b_0: 1.0
+      b_1: 0.0
+      b_2: 0.0
+      b_3: 0.0
+      b_4: 0.0
+      b_5: 0.0
+      b_6: 0.0
+      b_7: 0.0
+    energy: -90624.0

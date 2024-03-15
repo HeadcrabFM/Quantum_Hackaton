@@ -1,0 +1,22 @@
+problems:
+  - id: task_2
+    data_dir: ~/examples/translators
+    type: QUBO
+    solver: simcim
+#    options: [opt1, opt2]
+    objective:
+        to: min
+        filenames: qubo.pkl
+        target: 50
+
+#simcim:
+ # opt1:
+  #  num_runs: 10
+   # num_steps: 1000
+    #alpha: 0.3
+    #dt: 4
+
+  #opt2:
+   # num_runs: 100
+   # alpha: [0.3, 0.5]
+    #dt: 10
