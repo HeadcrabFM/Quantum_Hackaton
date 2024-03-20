@@ -14,7 +14,8 @@ for file in filenames:
     
 ions=[17,57,92,130]#номер строки, с которой начинается поиск i-го иона
 count=0
-file = open('data.txt', 'w')
+file = open('data-csv.txt', 'w')
+file1 = open('data-clear.txt', 'w')
 
 for path in paths:
     b=[0,0,0,0] #Инициализируем вектор ионов
@@ -29,12 +30,14 @@ for path in paths:
             max_num=max(row)#Находим пиксель с наибольшим значением оттенка серого
             if max_num>50:#Проверка превышения порогового значения
                 b[j]=1
+        print(f'Обработка иона {count+1}:   итоговый вектор - {b[0]} {b[1]} {b[2]} {b[3]}')
 
-    file.write(f'{count};{path[5:]};{b[0]};{b[1]};{b[2]};{b[3]}\n')#Подготовка данных для записи в csv
+    file.write(f'{count+1};{path[5:]};{b[0]};{b[1]};{b[2]};{b[3]}\n') # Подготовка данных для записи в читаемом виде
+    file1.write(f'Обработка иона {count+1}:   итоговый вектор -     {b[0]} {b[1]} {b[2]} {b[3]}\n')  # Подготовка данных для записи в csv
     count+=1
 file.close()
 
-f = open('data.txt', 'r')
+f = open('data-csv.txt', 'r')
 #Запись результатов в csv файл
 with open('labeled_ions_korabeli_12.csv', 'w',newline='') as file:
     writer = csv.writer(file)
@@ -42,4 +45,5 @@ with open('labeled_ions_korabeli_12.csv', 'w',newline='') as file:
     for s in f:
         writer.writerow(c.strip() for c in s.strip().split(';'))
 f.close()
-print(f'Время выполнения программы: {round(time.time()-start_time,3)} c.')
+print(f'\nВремя выполнения программы: {round(time.time()-start_time,3)} c.')
+input('. . . press Enter to exit . . .')
