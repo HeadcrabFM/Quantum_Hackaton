@@ -25,66 +25,71 @@ for file in filenames_validate:
     paths_validate.append(dir_validate + f'/{file}')
 
 
+'''
+сначала обрабатываем 100 картинок для обучения и 
+100 картинок для валидации классическим методом,
+чтобы иметь массив для валидации. Запись в .txt файл
+'''
+
+
+def Classic(name,currentpath,descr):
+    ions = [17, 57, 92, 130]  # номер строки, с которой начинается поиск i-го иона
+    count = 0
+    file = open(name, 'w')
+    for path in currentpath:
+        b = [0, 0, 0, 0]  # Инициализируем пустой вектор ионов
+        # Открываем картинку, преобразуем её пиксели в оттенки серого и считываем её как массив
+        img = Image.open(path)
+        gray_img = img.convert('L')
+        gray_arr = np.asarray(gray_img)
+        arr_trimmed = gray_arr[:, 27:-24]  # выделяем центральную часть картинки
+        # Поиск иона
+        for j in range(len(ions)):
+            for i in range(5):
+                rowpix_validate = arr_trimmed[ions[j] + 1]  # для дальнейшего обучения нейросети
+                max_num = max(rowpix_validate)  # Находим пиксель с наибольшим значением оттенка серого
+                if max_num > 50:  # Проверка превышения порогового значения
+                    b[j] = 1
+        print(f'Обработкa иона {descr} {count + 1}:\t\tитоговый вектор - \t{b[0]} {b[1]} {b[2]} {b[3]}\t\t\tИмя файла: {path}')
+        file.write(
+            f'Обработка иона {descr} {count + 1}:   итоговый вектор -     {b[0]} {b[1]} {b[2]} {b[3]}\n')
+        count += 1
+    file.close()
+    print(f'\nКонец предобработки массива {descr}...\n'+'_ '*75+'\n\n')
 
 '''
 сначала обрабатываем 100 картинок для обучения и 
 100 картинок для валидации классическим методом,
 чтобы иметь массив для валидации. Запись в .txt файл
 '''
-ions = [17, 57, 92, 130]  # номер строки, с которой начинается поиск i-го иона
-count = 0
 
+Classic('data-learn.txt',paths_learn,'обучения')
+Classic('data-validate.txt',paths_validate,'валидации')
+Classic('data-ions.txt',paths,'')
 #обучение
-file = open('data-learn.txt', 'w')
-for path in paths_learn:
-    b = [0, 0, 0, 0]  # Инициализируем пустой вектор ионов
-    # Открываем картинку, преобразуем её пиксели в оттенки серого и считываем её как массив
-    img = Image.open(path)
-    gray_img = img.convert('L')
-    gray_arr = np.asarray(gray_img)
-    # Поиск иона
-    for j in range(len(ions)):
-        for i in range(5):
-            row = gray_arr[ions[j] + i]
-            max_num = max(row)  # Находим пиксель с наибольшим значением оттенка серого
-            if max_num > 50:  # Проверка превышения порогового значения
-                b[j] = 1
-        print(f'Обработка иона обучения {count + 1}:\t\tитоговый вектор - \t{b[0]} {b[1]} {b[2]} {b[3]}')
-    file.write(
-        f'Обработка иона обучения {count + 1}:   итоговый вектор -     {b[0]} {b[1]} {b[2]} {b[3]}\n')  # Подготовка данных для записи в csv
-    count += 1
-file.close()
-
-# валидация
-file = open('data-validate.txt', 'w')
-count = 0
-for path in paths_validate:
-    b = [0, 0, 0, 0]
-    img = Image.open(path)
-    gray_img = img.convert('L')
-    gray_arr = np.asarray(gray_img)
-    # Поиск иона
-    for j in range(len(ions)):
-        for i in range(5):
-            row = gray_arr[ions[j] + i]
-            max_num = max(row)  # Находим пиксель с наибольшим значением оттенка серого
-            if max_num > 50:  # Проверка превышения порогового значения
-                b[j] = 1
-        print(f'Обработка иона валидации {count + 1}:\t\tитоговый вектор - \t{b[0]} {b[1]} {b[2]} {b[3]}')
-    file.write(
-        f'Обработка иона валидации {count + 1}:   итоговый вектор -     {b[0]} {b[1]} {b[2]} {b[3]}\n')  # Подготовка данных для записи в csv
-    count += 1
-file.close()
-
 
 
 '''
 теперь оборабатываем оставшиеся ионы с помощью простой нейросети.
-для этого 
+для этого обработаем все файлы из массива обучения с уже известными результатами
 '''
 
+#подготовка массива пикселей - основные картинки
+for path in paths:
+    # Открываем картинку, преобразуем её пиксели в оттенки серого и считываем её как массив
+    img = Image.open(path)
+    gray_img = img.convert('L')
+    gray_arr = np.asarray(gray_img)
+    arr_trimmed = gray_arr[:, 26:-25] # выделяем центральную часть картинки
 
-
+'''
+    for j in range(len(ions)):
+        for i in range(5):
+            row = arr_trimmed[ions[j] + i]
+            max_num = max(row)  # Находим пиксель с наибольшим значением оттенка серого
+            if max_num > 50:  # Проверка превышения порогового значения
+                b[j] = 1
+'''
 
 
 
