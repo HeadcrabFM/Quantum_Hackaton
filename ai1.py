@@ -54,7 +54,7 @@ for epoch in range(num_epochs):
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
 
 # Тестирование обученной нейронной сети
-test_data = np.random.randint(0, 256, size=(10, 3, 3))  # Пример случайной генерации тестовых данных
+test_data = np.random.randint(0, 256, size=(100, 3, 3))  # Пример случайной генерации тестовых данных
 
 with torch.no_grad():
     inputs = torch.FloatTensor(test_data)

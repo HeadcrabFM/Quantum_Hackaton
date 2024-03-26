@@ -1,39 +1,22 @@
-import os # для работы с файловой сисиемой
-import numpy as np #для создания массива
-from PIL import Image #
-import csv # для работы с импортом в csv
-import pandas as pd # для работы с таблицей экселя
-import time # для работы с таймерами
-
-start_time = time.time() # таймер
-
-# Считываем названия файлов и формируем относительные пути
-dir = 'ions'
-dir_learn='learn'
-dir_validate='validate'
-filenames = os.listdir(dir)
-filenames_learn=os.listdir(dir_learn)
-filenames_validate = os.listdir(dir_validate)
-paths = []
-for file in filenames:
-    paths.append(dir + f'/{file}')
-paths_learn = []
-for file in filenames_learn:
-    paths_learn.append(dir_learn + f'/{file}')
-paths_validate = []
-for file in filenames_validate:
-    paths_validate.append(dir_validate + f'/{file}')
+import os  # для работы с файловой сисиемой
+import numpy as np  # для создания массива
+from PIL import Image  # библиотека для работы с изображением
+import csv  # для работы с импортом в csv
+import pandas as pd  # для работы с таблицей экселя
+import time  # для работы с таймерами
 
 
-'''
-сначала обрабатываем 100 картинок для обучения и 
-100 картинок для валидации классическим методом,
-чтобы иметь массив для валидации. Запись в .txt файл
-'''
+# Функция считывания имён файлов и формирования относительных путей
+def GetListOfFiles(dirname):
+    filelist = os.listdir(dirname)
+    filepaths = []
+    for file in filelist:
+        filepaths.append(dirname + f'/{file}')
+    return filepaths
 
 
-def Classic(name,currentpath,descr):
-    ions = [17, 57, 92, 130]  # номер строки, с которой начинается поиск i-го иона
+# Функция для обработки изображения классическим методом
+def Classic(name, currentpath, descr):
     count = 0
     file = open(name, 'w')
     for path in currentpath:
@@ -43,6 +26,7 @@ def Classic(name,currentpath,descr):
         gray_img = img.convert('L')
         gray_arr = np.asarray(gray_img)
         arr_trimmed = gray_arr[:, 27:-24]  # выделяем центральную часть картинки
+        arr_ions_trimmed = np.asarray([])
         # Поиск иона
         for j in range(len(ions)):
             for i in range(5):
@@ -50,12 +34,51 @@ def Classic(name,currentpath,descr):
                 max_num = max(rowpix_validate)  # Находим пиксель с наибольшим значением оттенка серого
                 if max_num > 50:  # Проверка превышения порогового значения
                     b[j] = 1
-        print(f'Обработкa иона {descr} {count + 1}:\t\tитоговый вектор - \t{b[0]} {b[1]} {b[2]} {b[3]}\t\t\tИмя файла: {path}')
+        # вывод на экран
+        print(
+            f'Обработкa иона {descr} {count + 1}:\t\t'
+            f'итоговый вектор -\t{b[0]} {b[1]} {b[2]} {b[3]}\t\t\t'
+            f'Имя файла: {path}')
+        # запись в .txt файл
         file.write(
-            f'Обработка иона {descr} {count + 1}:   итоговый вектор -     {b[0]} {b[1]} {b[2]} {b[3]}\n')
+            f'Обработка иона {descr} {count + 1}:\t\t'
+            f'итоговый вектор -\t{b[0]} {b[1]} {b[2]} {b[3]}\t\t\t'
+            f'Имя файла: {path}\n')
         count += 1
     file.close()
-    print(f'\nКонец предобработки массива {descr}...\n'+'_ '*75+'\n\n')
+    print(f'\nКонец предобработки массива {descr}...\n' + '_ ' * 75 + '\n\n')
+
+
+# Функция получения пиксельной матрицы квадратика изображения
+# получаем участок 5х5 с цветовыми кодами каждого пикселя
+# сохраняем как список
+# Получаем файл где есть 820*4 строк по 25 элементов - 4 областей иона 5х5
+
+def GetIonMatrix(outputfilename, currentpath, descr):
+    count = 0
+    file = open(outputfilename, 'w')
+    for path in currentpath:
+        # Открываем картинку, преобразуем её пиксели в оттенки серого и считываем её как массив
+        img = Image.open(path)
+        gray_img = img.convert('L')
+        gray_arr = np.asarray(gray_img)
+        for i in range(4):
+            output = []
+            arr_trimmed = gray_arr[ions[i]:-(164 - ions[i] - 5), 29:-22]  # выделяем центральную часть картинки
+            for j in range(5):
+                for k in range(5):
+                    output.append(arr_trimmed[j, k])
+            print(f'Картинка №{count + 1}, Ион №{i + 1}:\t\t'
+                  f'{output}')
+            file.write(f'Картинка №{count + 1}, Ион №{i + 1}:\t\t'
+                       f'{output}\n')
+        print('- ' * 11)
+        file.write(f'{'- ' * 11}\n')
+        count += 1
+    #        print(arr_trimmed)
+    file.close()
+    print(f'\nКонец получения матриц пикселей иона для файлов в папке {descr}...\n{'_ ' * 75}\n\n')
+
 
 '''
 сначала обрабатываем 100 картинок для обучения и 
@@ -63,35 +86,27 @@ def Classic(name,currentpath,descr):
 чтобы иметь массив для валидации. Запись в .txt файл
 '''
 
-Classic('data-learn.txt',paths_learn,'обучения')
-Classic('data-validate.txt',paths_validate,'валидации')
-Classic('data-ions.txt',paths,'')
-#обучение
+start_time = time.time()    # таймер
+ions = [17, 57, 92, 130]    # номер строки, с которой начинается поиск i-го иона
+barrier_value = 50          # пороговое значение цвета
 
+# Получаем список имён файлов и путей к ним для папок обучения, валидации,
+# а также папки с основным массивом картинок для обработки
+paths, paths_learn, paths_validate = (GetListOfFiles('ions'),
+                                      GetListOfFiles('learn'),
+                                      GetListOfFiles('validate'))
 
+Classic('data-learn(classic).txt', paths_learn, 'обучения')
+Classic('data-validate(classic).txt', paths_validate, 'валидации')
+Classic('data-ions(classic).txt', paths, 'для основной обработки')
+
+GetIonMatrix('test.txt', paths, 'descr')
+
+# обучение
 '''
-теперь оборабатываем оставшиеся ионы с помощью простой нейросети.
+теперь оборабатываем основной массив ионов с помощью простой нейросети.
 для этого обработаем все файлы из массива обучения с уже известными результатами
 '''
-
-#подготовка массива пикселей - основные картинки
-for path in paths:
-    # Открываем картинку, преобразуем её пиксели в оттенки серого и считываем её как массив
-    img = Image.open(path)
-    gray_img = img.convert('L')
-    gray_arr = np.asarray(gray_img)
-    arr_trimmed = gray_arr[:, 26:-25] # выделяем центральную часть картинки
-
-'''
-    for j in range(len(ions)):
-        for i in range(5):
-            row = arr_trimmed[ions[j] + i]
-            max_num = max(row)  # Находим пиксель с наибольшим значением оттенка серого
-            if max_num > 50:  # Проверка превышения порогового значения
-                b[j] = 1
-'''
-
-
 
 
 '''
