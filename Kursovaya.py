@@ -48,12 +48,12 @@ def Classic(name, currentpath, descr):
     file.close()
     print(f'\nКонец предобработки массива {descr}...\n' + '_ ' * 75 + '\n\n')
 
-
-# Функция получения пиксельной матрицы квадратика изображения
-# получаем участок 5х5 с цветовыми кодами каждого пикселя
-# сохраняем как список
-# Получаем файл где есть 820*4 строк по 25 элементов - 4 областей иона 5х5
-
+'''
+Функция получения пиксельной матрицы квадратика изображения
+получаем участок 5х5 с цветовыми кодами каждого пикселя
+сохраняем как 4 списка по 25 элементов (4 цветовых матрицы
+областей иона 5х5) для каждой картинки
+'''
 def GetIonMatrix(outputfilename, currentpath, descr):
     count = 0
     file = open(outputfilename, 'w')
@@ -96,16 +96,23 @@ paths, paths_learn, paths_validate = (GetListOfFiles('ions'),
                                       GetListOfFiles('learn'),
                                       GetListOfFiles('validate'))
 
-Classic('data-learn(classic).txt', paths_learn, 'обучения')
-Classic('data-validate(classic).txt', paths_validate, 'валидации')
-Classic('data-ions(classic).txt', paths, 'для основной обработки')
+# Создание папки для хранения данных обработки
+if os.path.exists('data'): pass
+else: os.makedirs('data')
 
-GetIonMatrix('test.txt', paths, 'descr')
+Classic('data/data-learn(classic).txt', paths_learn, 'обучения')
+Classic('data/data-validate(classic).txt', paths_validate, 'валидации')
+Classic('data/data-ions(classic).txt', paths, 'для основной обработки')
 
-# обучение
+GetIonMatrix('data/matrix-learn.txt', paths_learn, 'обучения')
+GetIonMatrix('data/matrix-validate.txt', paths_validate, 'валидации')
+GetIonMatrix('data/matrix-ions.txt', paths, 'для основной обработки')
+
 '''
 теперь оборабатываем основной массив ионов с помощью простой нейросети.
-для этого обработаем все файлы из массива обучения с уже известными результатами
+для этого обработаем все файлы из массива обучения с уже известными результатами/
+У нас получается 100*4 = 400 строчек для обучения в массиве ообучения,
+а также 100*4 = 400 строчек для валидации.
 '''
 
 
