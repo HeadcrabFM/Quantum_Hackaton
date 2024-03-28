@@ -7,19 +7,28 @@ import time  # для работы с таймерами
 
 
 # Функция считывания имён файлов и формирования относительных путей
-def GetListOfFiles(dirname):
-    filelist = os.listdir(dirname)
+def GetListOfFiles(targetfolder):
+    filelist = os.listdir(targetfolder)
     filepaths = []
     for file in filelist:
-        filepaths.append(dirname + f'/{file}')
+        filepaths.append(targetfolder + f'/{file}')
     return filepaths
 
+# Функция создания папок для хранения файлов вывода и самих файлов вывода, вызывается внутри функций обработки
+def Output(outputfolder, outputfile):
+    # создание папки для хранения результатов
+    if os.path.exists(outputfolder):
+        pass
+    else:
+        os.makedirs(outputfolder)
+    outputfile = open(outputfolder + f'/{outputfile}', 'w')
+    return outputfile
 
 # Функция для обработки изображения классическим методом
-def Classic(name, currentpath, descr):
+def Classic(outputfolder, outputfile, inputfolder, descr):
     count = 0
-    file = open(name, 'w')
-    for path in currentpath:
+    file=Output(outputfolder, outputfile)
+    for path in inputfolder:
         b = [0, 0, 0, 0]  # Инициализируем пустой вектор ионов
         # Открываем картинку, преобразуем её пиксели в оттенки серого и считываем её как массив
         img = Image.open(path)
@@ -48,37 +57,46 @@ def Classic(name, currentpath, descr):
     file.close()
     print(f'\nКонец предобработки массива {descr}...\n' + '_ ' * 75 + '\n\n')
 
-'''
-Функция получения пиксельной матрицы квадратика изображения
-получаем участок 5х5 с цветовыми кодами каждого пикселя
-сохраняем как 4 списка по 25 элементов (4 цветовых матрицы
-областей иона 5х5) для каждой картинки
-'''
-def GetIonMatrix(outputfilename, currentpath, descr):
+
+
+
+
+def GetIonMatrix(outputfolder, outputfile_human, outputfile_AI, inputfolder, descr):
+    '''
+    Функция получения пиксельной матрицы квадратика изображения
+    получаем участок 5х5 с цветовыми кодами каждого пикселя
+    сохраняем как 4 списка по 25 элементов (4 цветовых матрицы
+    областей иона 5х5) для каждой картинки
+    '''
+    # Создание папки для хранения входных данных в читаемом нейросетью виде
     count = 0
-    file = open(outputfilename, 'w')
-    for path in currentpath:
+    file_human=Output(outputfolder, outputfile_human)
+    file_AI=Output(outputfolder, outputfile_AI)
+    for path in inputfolder:
         # Открываем картинку, преобразуем её пиксели в оттенки серого и считываем её как массив
         img = Image.open(path)
         gray_img = img.convert('L')
         gray_arr = np.asarray(gray_img)
+        file_human.write(f'Имя файла: \t\t{path}\n')
+        print(f'Имя файла: \t\t{path}\n')
         for i in range(4):
             output = []
             arr_trimmed = gray_arr[ions[i]:-(164 - ions[i] - 5), 29:-22]  # выделяем центральную часть картинки
             for j in range(5):
                 for k in range(5):
                     output.append(arr_trimmed[j, k])
-            print(f'Картинка №{count + 1}, Ион №{i + 1}:\t\t'
+            print(f'Ион №{count+1}.{i + 1}:\t\t'
                   f'{output}')
-            file.write(f'Картинка №{count + 1}, Ион №{i + 1}:\t\t'
+            file_human.write(f'Картинка №{count + 1}, Ион №{i + 1}:\t\t'
                        f'{output}\n')
         print('- ' * 11)
-        file.write(f'{'- ' * 11}\n')
+        file_human.write(f'{'- ' * 11}\n')
         count += 1
-    #        print(arr_trimmed)
-    file.close()
+    file_human.close()
+    file_AI.close()
     print(f'\nКонец получения матриц пикселей иона для файлов в папке {descr}...\n{'_ ' * 75}\n\n')
 
+# Функция обработки данных в читаемом нейросетью виде.. было бы круто конечно если бы это внутри гет ион матриксе происходило.
 
 '''
 сначала обрабатываем 100 картинок для обучения и 
@@ -86,9 +104,9 @@ def GetIonMatrix(outputfilename, currentpath, descr):
 чтобы иметь массив для валидации. Запись в .txt файл
 '''
 
-start_time = time.time()    # таймер
-ions = [17, 57, 92, 130]    # номер строки, с которой начинается поиск i-го иона
-barrier_value = 50          # пороговое значение цвета
+start_time = time.time()  # таймер
+ions = [17, 57, 92, 130]  # номер строки, с которой начинается поиск i-го иона
+barrier_value = 50  # пороговое значение цвета
 
 # Получаем список имён файлов и путей к ним для папок обучения, валидации,
 # а также папки с основным массивом картинок для обработки
@@ -97,16 +115,18 @@ paths, paths_learn, paths_validate = (GetListOfFiles('ions'),
                                       GetListOfFiles('validate'))
 
 # Создание папки для хранения данных обработки
-if os.path.exists('data'): pass
-else: os.makedirs('data')
 
-Classic('data/data-learn(classic).txt', paths_learn, 'обучения')
-Classic('data/data-validate(classic).txt', paths_validate, 'валидации')
-Classic('data/data-ions(classic).txt', paths, 'для основной обработки')
 
-GetIonMatrix('data/matrix-learn.txt', paths_learn, 'обучения')
-GetIonMatrix('data/matrix-validate.txt', paths_validate, 'валидации')
-GetIonMatrix('data/matrix-ions.txt', paths, 'для основной обработки')
+Classic('data', 'classic-learn.txt', paths_learn, 'обучения')
+Classic('data', 'classic-validate.txt', paths_validate, 'валидации')
+Classic('data', 'classic-ions.txt', paths, 'для основной обработки')
+
+GetIonMatrix('data', 'matrix-learn-human.txt',
+             'matrix-learn-AI.txt', paths_learn, 'обучения')
+GetIonMatrix('data', 'matrix-validate-human.txt',
+             'matrix-validate-AI.txt', paths_validate, 'валидации')
+GetIonMatrix('data', 'matrix-ions-human.txt',
+             'matrix-ions-AI.txt', paths, 'для основной обработки')
 
 '''
 теперь оборабатываем основной массив ионов с помощью простой нейросети.
@@ -114,7 +134,6 @@ GetIonMatrix('data/matrix-ions.txt', paths, 'для основной обраб�
 У нас получается 100*4 = 400 строчек для обучения в массиве ообучения,
 а также 100*4 = 400 строчек для валидации.
 '''
-
 
 '''
 f = open('data-csv.txt', 'r')
